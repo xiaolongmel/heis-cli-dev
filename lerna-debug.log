@@ -1,6 +1,0 @@
-42 error Error: Command failed: git tag v1.0.2 -m v1.0.2
-42 error fatal: tag 'v1.0.2' already exists
-42 error
-42 error     at makeError (/Users/heisenberg/Desktop/heis-cli-dev/heis-cli-dev/node_modules/_execa@1.0.0@execa/index.js:174:9)
-42 error     at /Users/heisenberg/Desktop/heis-cli-dev/heis-cli-dev/node_modules/_execa@1.0.0@execa/index.js:278:16
-42 error     at processTicksAndRejections (internal/process/task_queues.js:93:5)
