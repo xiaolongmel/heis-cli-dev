@@ -1,6 +1,6 @@
 {
   "name": "@heis-cli-dev/utils",
-  "version": "1.0.3",
+  "version": "1.0.0",
   "description": "heis-cli-dev utils",
   "author": "xux <12345678>",
   "homepage": "",
@@ -16,5 +16,5 @@
   "scripts": {
     "test": "echo \"Run testing from utils \""
   },
-  "gitHead": "8aabb3dbe789eaa2714211a026d845ef809db39f"
+  "gitHead": "d2df1e9fe3c4292496eaf822da6b44fc3b164fd1"
 }
