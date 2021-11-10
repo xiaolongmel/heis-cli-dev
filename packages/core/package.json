@@ -1,6 +1,6 @@
 {
   "name": "@heis-cli-dev/core",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "heis-cli-dev core",
   "author": "xux <12345678>",
   "homepage": "",
@@ -15,8 +15,5 @@
   ],
   "scripts": {
     "test": "echo \"Run testing from core \""
-  },
-  "dependencies": {
-   
   }
 }
