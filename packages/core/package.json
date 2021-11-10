@@ -5,6 +5,9 @@
   "author": "xux <12345678>",
   "homepage": "",
   "license": "ISC",
+  "bin": {
+    "heis-cli-dev": "bin/index.js"
+  },
   "main": "lib/core.js",
   "directories": {
     "lib": "lib",
@@ -15,5 +18,6 @@
   ],
   "scripts": {
     "test": "echo \"Run testing from core \""
-  }
+  },
+  "gitHead": "8aabb3dbe789eaa2714211a026d845ef809db39f"
 }
