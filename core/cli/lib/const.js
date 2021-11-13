@@ -1,5 +1,5 @@
 const LOWEST_NODE_VERSION = '12.0.0'
-const DEFAULT_CLI_HOME = '.heis-cli'
+const DEFAULT_CLI_HOME = '.heis-cli-dev'
 
 
 module.exports = {

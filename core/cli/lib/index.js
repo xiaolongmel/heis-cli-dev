@@ -10,6 +10,8 @@ const userHome = require('user-home')
 const pathExists = require('path-exists').sync
 const log = require('@heis-cli-dev/log')
 const init = require('@heis-cli-dev/init')
+const exec = require('@heis-cli-dev/exec')
+
 
 const constant = require('./const')
 const pkg = require('../package.json')
@@ -22,17 +24,14 @@ const program = new commander.Command();
 async function core() {
 
     try {
-        checkPkgVersion()
-        checkNodeVersion()
-        checkRoot()
-        checkUserHome()
-        // checkInputArgs()
-        checkEnv()
-        await checkGlobalUpdate()
+        await prepare()
         registerCommand()
-        // log.verbose('debug', 'test debug log')
     } catch (e) {
         log.error(e.message)
+        if(program.debug) {
+
+            console.log(e)
+        }
     }
 }
 
@@ -66,24 +65,33 @@ function registerCommand() {
     program
         .command('init [projectName]')
         .option('-f --force', '是否强制初始化项目')
-        .action(init)
+        .action(exec)
 
 
     // 注册未知命令
     program.on('command:*', function (obj) {
         const availableCommands = program.commands.map(cmd => cmd.name())
         console.log(colors.red('未知的命令: ' + obj[0]))
-        if(availableCommands.length > 0) {
+        if (availableCommands.length > 0) {
             console.log(colors.red('可用命令: ' + availableCommands.join(',')))
         }
     })
     program.parse(process.argv)
 
-    if(program.args && program.args.length < 1) {
+    if (program.args && program.args.length < 1) {
         console.log(program.args)
         program.outputHelp();
 
     }
+}
+
+async function prepare() {
+    checkPkgVersion()
+    checkNodeVersion()
+    checkRoot()
+    checkUserHome()
+    checkEnv()
+    await checkGlobalUpdate()
 }
 
 function checkNodeVersion() {
@@ -103,10 +111,10 @@ async function checkGlobalUpdate() {
     // 2.调用npm API, 获取所有版本号
     // 3.提取所有版本号，比对哪些版本是大于当前版本号
     // 4.获取最新的版本号
-    const { getNpmSemverVersion } = require('@heis-cli-dev/get-npm-info')
+    const {getNpmSemverVersion} = require('@heis-cli-dev/get-npm-info')
     const lastVersion = await getNpmSemverVersion(currentVersion, npmName)
     // 5.提示用户更新到该版本
-    if(lastVersion && semver.gt(lastVersion, currentVersion)) {
+    if (lastVersion && semver.gt(lastVersion, currentVersion)) {
         log.warn('更新提示', colors.yellow(`请手动更新 ${npmName}, 当前版本: ${currentVersion}, 最新版本: ${lastVersion}
         更新命令: npm install -g ${npmName}`))
     }
@@ -114,7 +122,7 @@ async function checkGlobalUpdate() {
 
 function checkEnv() {
     const dotenv = require('dotenv')
-    const dotenvPath =  path.resolve(userHome, '.env')
+    const dotenvPath = path.resolve(userHome, '.env')
     if (pathExists(dotenvPath)) {
 
         dotenv.config({
@@ -122,14 +130,13 @@ function checkEnv() {
         })
     }
     createDefaultConfig();
-    // log.verbose('环境变量', process.env.CLI_HOME_PATH)
 }
 
 function createDefaultConfig() {
     const cliConfig = {
         home: userHome
     }
-    if(process.env.CLI_HOME) {
+    if (process.env.CLI_HOME) {
         cliConfig['cliHome'] = path.join(userHome, process.env.CLI_HOME)
     } else {
         cliConfig['cliHome'] = path.join(userHome, constant.DEFAULT_CLI_HOME)
@@ -137,23 +144,6 @@ function createDefaultConfig() {
     process.env.CLI_HOME_PATH = cliConfig.cliHome
 }
 
-function checkInputArgs() {
-    const minimist = require('minimist')
-    args = minimist(process.argv.slice(2))
-    checkArgs()
-
-
-}
-
-function checkArgs() {
-    if(args.debug) {
-        process.env.LOG_LEVEL = 'verbose'
-    } else {
-        process.env.LOG_LEVEL = 'info'
-    }
-
-    log.level = process.env.LOG_LEVEL
-}
 
 function checkUserHome() {
     if (!userHome || !pathExists(userHome)) {
