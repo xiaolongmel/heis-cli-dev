@@ -8,6 +8,21 @@
   "bin": {
     "heis-cli-dev": "bin/index.js"
   },
+  "dependencies": {
+    "@heis-cli-dev/get-npm-info": "file:../../utils/get-npm-info",
+    "@heis-cli-dev/log": "file:../../utils/log",
+    "@heis-cli-dev/init": "file:../../commands/init",
+    "colors": "^1.4.0",
+    "commander": "6.2.1",
+    "dotenv": "8.2.0",
+    "import-local": "^3.0.3",
+    "minimist": "^1.2.5",
+    "npmlog": "^5.0.1",
+    "path-exists": "4.0.0",
+    "root-check": "1.0.0",
+    "semver": "^7.3.5",
+    "user-home": "2.0.0"
+  },
   "main": "lib/core.js",
   "directories": {
     "lib": "lib",
