@@ -1,7 +1,7 @@
 {
-  "name": "get-npm-info",
+  "name": "@heis-cli-dev/command",
   "version": "1.0.0",
-  "description": "get npm info",
+  "description": "heis-cli-dev command",
   "author": "xux <12345678>",
   "homepage": "https://github.com/xiaolongmel/heis-cli-dev#readme",
   "license": "ISC",
@@ -13,6 +13,9 @@
   "files": [
     "lib"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/xiaolongmel/heis-cli-dev.git"
@@ -24,8 +27,9 @@
     "url": "https://github.com/xiaolongmel/heis-cli-dev/issues"
   },
   "dependencies": {
-    "axios": "^0.24.0",
+    "colors": "^1.4.0",
     "semver": "^7.3.5",
-    "url-join": "^4.0.1"
+    "@heis-cli-dev/log": "file:../../utils/log",
+    "@heis-cli-dev/utils": "file:../../utils/utils"
   }
 }

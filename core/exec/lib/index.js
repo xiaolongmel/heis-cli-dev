@@ -20,7 +20,7 @@ async function exec() {
     log.verbose('targetPath', targetPath)
     log.verbose('homePath', homePath)
 
-    const cmdObj = arguments[arguments.length = 1]
+    const cmdObj = arguments[arguments.length - 1]
     const cmdName = cmdObj.name()
     const packageName = SETTINGS[cmdName]
     const packageVersion = 'latest'
@@ -45,17 +45,23 @@ async function exec() {
         } else {
             // 安装package
             await pkg.install()
-            pkg = new Package({
-                targetPath,
-                packageName,
-                packageVersion,
-
-            })
 
         }
-        const rootFile = pkg.getRootFilePath()
-        if(rootFile) {
-            require(rootFile).apply(null, [arguments[0], arguments[1]])
+
+    } else {
+        pkg = new Package({
+            targetPath,
+            packageName,
+            packageVersion,
+
+        })
+    }
+    const rootFile = pkg.getRootFilePath()
+    if(rootFile) {
+        try {
+            require(rootFile).call(null, Array.prototype.slice.apply(arguments))
+        } catch (e) {
+            log.error(e.message)
         }
     }
 

@@ -25,5 +25,9 @@
   },
   "bugs": {
     "url": "https://github.com/xiaolongmel/heis-cli-dev/issues"
+  },
+  "dependencies": {
+    "@heis-cli-dev/command": "file:../../models/command",
+    "@heis-cli-dev/log": "file:../../utils/log"
   }
 }
