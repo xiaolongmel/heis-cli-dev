@@ -1,7 +1,7 @@
 {
-  "name": "@heis-cli-dev/init",
+  "name": "@heis-cli-dev/request",
   "version": "1.0.0",
-  "description": "heis-cli-dev init",
+  "description": "> TODO: description",
   "author": "xux <12345678>",
   "homepage": "https://github.com/xiaolongmel/heis-cli-dev#readme",
   "license": "ISC",
@@ -27,11 +27,6 @@
     "url": "https://github.com/xiaolongmel/heis-cli-dev/issues"
   },
   "dependencies": {
-    "@heis-cli-dev/command": "file:../../models/command",
-    "@heis-cli-dev/log": "file:../../utils/log",
-    "@heis-cli-dev/request": "file:../../utils/request",
-    "fs-extra": "^9.0.1",
-    "inquirer": "^7.3.3",
-    "semver": "^7.3.4"
+    "axios": "^0.24.0"
   }
 }
