@@ -30,7 +30,7 @@ class Command {
                 this.init()
             })
             chain = chain.then(() => {
-                this.execute()
+                this.exec()
             })
             chain.catch(err => {
                 log.error(err.message)
@@ -52,7 +52,7 @@ class Command {
         throw new Error('init必须实现')
     }
 
-    execute() {
+    exec() {
         throw new Error('execute必须实现')
     }
 
