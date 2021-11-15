@@ -1,12 +1,15 @@
 'use strict';
 
-
+const path = require('path')
 const inquirer = require('inquirer')
 const fs = require('fs')
 const fse = require('fs-extra')
 const semver = require('semver')
+const userHome = require('user-home')
 const log = require('@heis-cli-dev/log')
 const Command = require('@heis-cli-dev/command')
+const Package = require('@heis-cli-dev/package')
+const {spinnerStart, sleep} = require('@heis-cli-dev/utils')
 
 const getProjectTemplate = require('./getProjectTemplate')
 
@@ -33,7 +36,7 @@ class InitCommand extends Command {
                 // 2.下载模板
                 log.verbose('projectInfo', projectInfo)
                 this.projectInfo = projectInfo
-                this.downloadTemplate()
+                await this.downloadTemplate()
                 // 3.安装模板
             }
         } catch (e) {
@@ -41,8 +44,44 @@ class InitCommand extends Command {
         }
     }
 
-    downloadTemplate() {
-        console.log(this.projectInfo, this.template)
+    async downloadTemplate() {
+        const {projectTemplate} = this.projectInfo
+        const templateInfo = this.template.find(item => item.npmName === projectTemplate)
+        const targetPath = path.resolve(userHome, '.heis-cli-dev', 'template')
+        const storeDir = path.resolve(userHome, '.heis-cli-dev', 'template', 'node_modules')
+        const {npmName, version} = templateInfo
+        const templateNpm = new Package({
+            targetPath,
+            storeDir,
+            packageName: npmName,
+            packageVersion: version
+        })
+        if (!await templateNpm.exists()) {
+            const spinner = spinnerStart('正在下载模板...')
+            await sleep()
+            try {
+                await templateNpm.install()
+                log.success('下载模板成功')
+            } catch (e) {
+                throw new Error(e)
+            } finally {
+                spinner.stop(true)
+            }
+
+
+        } else {
+            const spinner = spinnerStart('正在更新模板...')
+            await sleep()
+            try {
+                await templateNpm.update()
+                log.success('更新模板成功')
+            } catch (e) {
+                throw new Error(e)
+            } finally {
+                spinner.stop(true)
+            }
+        }
+
         // 1.通过项目模板API获取项目模板信息
         // 1.1 通过egg.js搭建一套后台系统
         // 1.2 通过npm存储项目模板

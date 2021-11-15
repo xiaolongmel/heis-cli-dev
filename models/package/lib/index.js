@@ -31,7 +31,7 @@ class Package {
 
     async prepare() {
         // 如果缓存目录不存在，则创建
-        if(this.storeDir && !pathExists(this.storeDir)) {
+        if (this.storeDir && !pathExists(this.storeDir)) {
             fse.mkdirpSync(this.storeDir)
         }
         if (this.packageVersion === 'latest') {
@@ -84,8 +84,7 @@ class Package {
         // 2.查询最新版本号对应的路径存不存在
         const latestFilePath = this.getSpecificCacheFilePath(latestPackageVersion)
         // 3.如果不存在，则直接安装最新版本
-        console.log(this.storeDir)
-        if(!pathExists(latestFilePath)) {
+        if (!pathExists(latestFilePath)) {
             await npminstall({
                 root: this.targetPath,
                 storeDir: this.storeDir,
@@ -98,6 +97,8 @@ class Package {
                 ],
             })
             this.packageVersion = latestPackageVersion
+        } else {
+            this.packageVersion = latestPackageVersion;
         }
 
     }
@@ -119,10 +120,11 @@ class Package {
             }
             return null
         }
-        if(this.storeDir) {
+
+        if (this.storeDir) {
             return _getRootFile(this.cacheFilePath)
-        } else{
-           return _getRootFile(this.targetPath)
+        } else {
+            return _getRootFile(this.targetPath)
         }
 
 
