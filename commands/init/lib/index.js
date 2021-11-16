@@ -19,6 +19,8 @@ const TYPE_COMPONENT = 'component'
 const TEMPLATE_TYPE_NORMAL = 'normal'
 const TEMPLATE_TYPE_CUSTOM = 'custom'
 
+const WHITE_COMMAND = ['npm', 'cnpm'];
+
 function init(argv) {
     // console.log('init', programName, cmdObj.force, process.env.CLI_TARGET_PATH)
     return new InitCommand(argv)
@@ -68,7 +70,33 @@ class InitCommand extends Command {
 
     }
 
+    checkCommand(cmd) {
+        if (WHITE_COMMAND.includes(cmd)) {
+            return cmd;
+        }
+        return null;
+    }
+    async execCommand(command, errMsg) {
+        let ret;
+        if (command) {
+            const cmdArray = command.split(' ');
+            const cmd = this.checkCommand(cmdArray[0]);
+            if (!cmd) {
+                throw new Error('命令不存在！命令：' + command);
+            }
+            const args = cmdArray.slice(1);
+            ret = await execAsync(cmd, args, {
+                stdio: 'inherit',
+                cwd: process.cwd(),
+            });
+        }
+        if (ret !== 0) {
+            throw new Error(errMsg);
+        }
+        return ret;
+    }
     async installNormalTemplate() {
+        log.verbose('templateNpm', this.templateNpm);
         const spinner = spinnerStart("正在安装模板")
         await sleep()
         try {
@@ -87,31 +115,10 @@ class InitCommand extends Command {
 
         // 依赖安装
         const {installCommand, startCommand} = this.templateInfo
-        let installRet
-        if (installCommand) {
-            const installCwd = installCommand.split(' ')
-
-            const cmd = installCwd[0]
-            const args = installCwd.slice(1)
-            installRet = await execAsync(cmd, args, {
-                stdio: 'inherit',
-                cwd: process.cwd()
-            })
-            if(installRet !== 0 ) {
-                throw new Error('依赖安装过程中失败! ')
-            }
-            // 启动执行命令
-            if (startCommand) {
-                const startCwd = startCommand.split(' ')
-
-                const cmd = startCwd[0]
-                const args = startCwd.slice(1)
-                await execAsync(cmd, args, {
-                    stdio: 'inherit',
-                    cwd: process.cwd()
-                })
-            }
-        }
+        // 依赖安装
+        await this.execCommand(installCommand, '依赖安装失败！');
+        // 启动命令执行
+        await this.execCommand(startCommand, '启动执行命令失败！');
 
 
     }
