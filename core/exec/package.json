@@ -28,6 +28,7 @@
   },
   "dependencies": {
     "@heis-cli-dev/package": "file:../../models/package",
+    "@heis-cli-dev/utils": "file:../../utils/utils",
     "@heis-cli-dev/log": "file:../../utils/log"
   }
 }

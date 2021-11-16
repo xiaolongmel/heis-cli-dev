@@ -9,7 +9,7 @@ const userHome = require('user-home')
 const log = require('@heis-cli-dev/log')
 const Command = require('@heis-cli-dev/command')
 const Package = require('@heis-cli-dev/package')
-const {spinnerStart, sleep} = require('@heis-cli-dev/utils')
+const {spinnerStart, sleep, execAsync} = require('@heis-cli-dev/utils')
 
 const getProjectTemplate = require('./getProjectTemplate')
 
@@ -86,7 +86,33 @@ class InitCommand extends Command {
         }
 
         // 依赖安装
-        // 启动执行
+        const {installCommand, startCommand} = this.templateInfo
+        let installRet
+        if (installCommand) {
+            const installCwd = installCommand.split(' ')
+
+            const cmd = installCwd[0]
+            const args = installCwd.slice(1)
+            installRet = await execAsync(cmd, args, {
+                stdio: 'inherit',
+                cwd: process.cwd()
+            })
+            if(installRet !== 0 ) {
+                throw new Error('依赖安装过程中失败! ')
+            }
+            // 启动执行命令
+            if (startCommand) {
+                const startCwd = startCommand.split(' ')
+
+                const cmd = startCwd[0]
+                const args = startCwd.slice(1)
+                await execAsync(cmd, args, {
+                    stdio: 'inherit',
+                    cwd: process.cwd()
+                })
+            }
+        }
+
 
     }
     async installCustomTemplate() {

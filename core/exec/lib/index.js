@@ -1,9 +1,10 @@
 'use strict';
 
-const cp = require('child_process')
+
 const Package = require('@heis-cli-dev/package')
 const path = require('path')
 const log = require('@heis-cli-dev/log')
+const { exec: spawn } = require('@heis-cli-dev/utils')
 
 const SETTINGS = {
     init: '@imooc-cli/init'
@@ -101,15 +102,5 @@ async function exec() {
 
 }
 
-
-// 兼容windows
-function spawn(command, args, options) {
-    const win32 = process.platform === 'win32'
-
-    const cmd = win32 ? 'cmd' : command
-    const cmdArgs = win32 ? ['/c'].concat(command, args) : args
-
-    return cp.spawn(cmd, cmdArgs, options || {})
-}
 
 module.exports = exec;
