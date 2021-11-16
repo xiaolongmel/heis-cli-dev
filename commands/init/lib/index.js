@@ -3,6 +3,8 @@
 const path = require('path')
 const inquirer = require('inquirer')
 const fs = require('fs')
+const ejs = require('ejs')
+const glob = require('glob')
 const fse = require('fs-extra')
 const semver = require('semver')
 const userHome = require('user-home')
@@ -47,18 +49,21 @@ class InitCommand extends Command {
             }
         } catch (e) {
             log.error(e.message)
+            if (process.env.LOG_LEVEL === 'verbose') {
+                console.log(e)
+            }
         }
     }
 
     async installTemplate() {
         if (this.templateInfo) {
-            if(!this.templateInfo.type) {
+            if (!this.templateInfo.type) {
                 this.templateInfo.type = TEMPLATE_TYPE_NORMAL
             }
-            if(this.templateInfo.type === TEMPLATE_TYPE_NORMAL) {
+            if (this.templateInfo.type === TEMPLATE_TYPE_NORMAL) {
                 // 标准安装
                 this.installNormalTemplate()
-            } else if(this.templateInfo.type === TEMPLATE_TYPE_CUSTOM) {
+            } else if (this.templateInfo.type === TEMPLATE_TYPE_CUSTOM) {
                 // 自定义安装
                 this.installCustomTemplate()
             } else {
@@ -76,6 +81,7 @@ class InitCommand extends Command {
         }
         return null;
     }
+
     async execCommand(command, errMsg) {
         let ret;
         if (command) {
@@ -95,6 +101,43 @@ class InitCommand extends Command {
         }
         return ret;
     }
+
+    // ejs模板渲染
+    async ejsRender(options) {
+        const dir = process.cwd()
+        const projectInfo = this.projectInfo
+        return new Promise((resolve, reject) => {
+            glob('**', {
+                cwd: dir,
+                ignore: options.ignore || '',
+                nodir: true // 排除文件夹
+            }, (err, files) => {
+                if (err) {
+                    reject(err)
+                }
+                Promise.all(files.map(file => {
+                    const filePath = path.join(dir, file)
+                    return new Promise((resolve1, reject1) => {
+                        ejs.renderFile(filePath, projectInfo, {}, (err, result) => {
+                            console.log(err, result)
+                            if(err) {
+                                reject1(err)
+                            } else {
+                                // renderFile只会将当前ejs模板文件渲染成字符串，而不会执行写入操作
+                                fs.writeFileSync(filePath, result)
+                                resolve(result)
+                            }
+                        })
+                    })
+                })).then(() => {
+                    resolve()
+                }).catch(err => {
+                    reject(err)
+                })
+            })
+        })
+    }
+
     async installNormalTemplate() {
         log.verbose('templateNpm', this.templateNpm);
         const spinner = spinnerStart("正在安装模板")
@@ -112,7 +155,8 @@ class InitCommand extends Command {
             spinner.stop(true)
             log.success('模板安装成功')
         }
-
+        const ignore = ['node_modules/**', 'public/**']
+        await this.ejsRender({ignore})
         // 依赖安装
         const {installCommand, startCommand} = this.templateInfo
         // 依赖安装
@@ -122,6 +166,7 @@ class InitCommand extends Command {
 
 
     }
+
     async installCustomTemplate() {
         console.log('安装自定义模板')
     }
@@ -148,7 +193,7 @@ class InitCommand extends Command {
                 throw e
             } finally {
                 spinner.stop(true)
-                if(await templateNpm.exists()) {
+                if (await templateNpm.exists()) {
                     log.success('下载模板成功')
                     this.templateNpm = templateNpm
                 }
@@ -165,7 +210,7 @@ class InitCommand extends Command {
                 throw new Error(e)
             } finally {
                 spinner.stop(true)
-                if(await templateNpm.exists()) {
+                if (await templateNpm.exists()) {
                     log.success('更新模板成功')
                     this.templateNpm = templateNpm
                 }
@@ -321,7 +366,11 @@ class InitCommand extends Command {
         // AbcEfg => abc-efg
         // 生产className
         if (projectInfo.projectName) {
+            projectInfo.name = projectInfo.name
             projectInfo.className = require('kebab-case')(projectInfo.projectName).replace(/^-/, '')
+        }
+        if(projectInfo.projectVersion) {
+            projectInfo.version = projectInfo.projectVersion
         }
         // return 项目的基本信息 (object)
         return projectInfo
