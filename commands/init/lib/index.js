@@ -16,6 +16,9 @@ const getProjectTemplate = require('./getProjectTemplate')
 const TYPE_PROJECT = 'project'
 const TYPE_COMPONENT = 'component'
 
+const TEMPLATE_TYPE_NORMAL = 'normal'
+const TEMPLATE_TYPE_CUSTOM = 'custom'
+
 function init(argv) {
     // console.log('init', programName, cmdObj.force, process.env.CLI_TARGET_PATH)
     return new InitCommand(argv)
@@ -38,10 +41,56 @@ class InitCommand extends Command {
                 this.projectInfo = projectInfo
                 await this.downloadTemplate()
                 // 3.安装模板
+                await this.installTemplate()
             }
         } catch (e) {
             log.error(e.message)
         }
+    }
+
+    async installTemplate() {
+        if (this.templateInfo) {
+            if(!this.templateInfo.type) {
+                this.templateInfo.type = TEMPLATE_TYPE_NORMAL
+            }
+            if(this.templateInfo.type === TEMPLATE_TYPE_NORMAL) {
+                // 标准安装
+                this.installNormalTemplate()
+            } else if(this.templateInfo.type === TEMPLATE_TYPE_CUSTOM) {
+                // 自定义安装
+                this.installCustomTemplate()
+            } else {
+                throw new Error('无法识别项目模板类型!')
+            }
+        } else {
+            throw new Error('项目模板信息不存在!')
+        }
+
+    }
+
+    async installNormalTemplate() {
+        const spinner = spinnerStart("正在安装模板")
+        await sleep()
+        try {
+            // 拷贝模板代码至当前目录
+            const templatePath = path.resolve(this.templateNpm.cacheFilePath, 'template')
+            const targetPath = process.cwd()
+            fse.ensureDirSync(templatePath)
+            fse.ensureDirSync(targetPath)
+            fse.copySync(templatePath, targetPath)
+        } catch (e) {
+            throw e
+        } finally {
+            spinner.stop(true)
+            log.success('模板安装成功')
+        }
+
+        // 依赖安装
+        // 启动执行
+
+    }
+    async installCustomTemplate() {
+        console.log('安装自定义模板')
     }
 
     async downloadTemplate() {
@@ -50,6 +99,7 @@ class InitCommand extends Command {
         const targetPath = path.resolve(userHome, '.heis-cli-dev', 'template')
         const storeDir = path.resolve(userHome, '.heis-cli-dev', 'template', 'node_modules')
         const {npmName, version} = templateInfo
+        this.templateInfo = templateInfo
         const templateNpm = new Package({
             targetPath,
             storeDir,
@@ -61,11 +111,15 @@ class InitCommand extends Command {
             await sleep()
             try {
                 await templateNpm.install()
-                log.success('下载模板成功')
             } catch (e) {
-                throw new Error(e)
+                throw e
             } finally {
                 spinner.stop(true)
+                if(await templateNpm.exists()) {
+                    log.success('下载模板成功')
+                    this.templateNpm = templateNpm
+                }
+
             }
 
 
@@ -74,11 +128,14 @@ class InitCommand extends Command {
             await sleep()
             try {
                 await templateNpm.update()
-                log.success('更新模板成功')
             } catch (e) {
                 throw new Error(e)
             } finally {
                 spinner.stop(true)
+                if(await templateNpm.exists()) {
+                    log.success('更新模板成功')
+                    this.templateNpm = templateNpm
+                }
             }
         }
 
