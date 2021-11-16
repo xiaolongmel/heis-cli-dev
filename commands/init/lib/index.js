@@ -120,7 +120,7 @@ class InitCommand extends Command {
                     return new Promise((resolve1, reject1) => {
                         ejs.renderFile(filePath, projectInfo, {}, (err, result) => {
                             console.log(err, result)
-                            if(err) {
+                            if (err) {
                                 reject1(err)
                             } else {
                                 // renderFile只会将当前ejs模板文件渲染成字符串，而不会执行写入操作
@@ -269,7 +269,16 @@ class InitCommand extends Command {
     }
 
     async getProjectInfo() {
+        function isValidName(v) {
+            return /^[a-zA-Z]+([-][a-zA-Z][a-zA-Z0-9]*|[_][a-zA-Z][a-zA-Z0-9]*|[a-zA-Z0-9])*$/.test(v)
+        }
+
         let projectInfo = {}
+        let isProjectNameValid = false
+        if (isValidName(this.projectName)) {
+            isProjectNameValid = true
+            projectInfo.projectName = this.projectName
+        }
         // 1.选择创建项目或组件
         const {type} = await inquirer.prompt({
             type: 'list',
@@ -288,7 +297,7 @@ class InitCommand extends Command {
 
         if (type === TYPE_PROJECT) {
             // 2.获取项目的基本信息
-            const project = await inquirer.prompt([{
+            const projectNamePrompt = {
                 type: 'input',
                 name: 'projectName',
                 message: '请输入项目名称',
@@ -306,7 +315,7 @@ class InitCommand extends Command {
                         // 合法: a, a-b, a_b, a-b-c, a_b_c, a-b1-c1, a_b1_c1
                         // 不合法: 1, a_, a-, a_1, a-1
                         // *表示匹配0次到多次
-                        if (!/^[a-zA-Z]+([-][a-zA-Z][a-zA-Z0-9]*|[_][a-zA-Z][a-zA-Z0-9]*|[a-zA-Z0-9])*$/.test(v)) {
+                        if (!isValidName(v)) {
                             // Pass the return value in the done callback
                             done('请输入合法的项目名称');
                             return;
@@ -319,7 +328,12 @@ class InitCommand extends Command {
                 filter: function (v) {
                     return v
                 }
-            }, {
+            }
+            const projectPrompt = []
+            if (!isProjectNameValid) {
+                projectPrompt.push(projectNamePrompt)
+            }
+            projectPrompt.push({
                 type: 'input',
                 name: "projectVersion",
                 message: '请输入项目版本号',
@@ -351,9 +365,10 @@ class InitCommand extends Command {
                 name: 'projectTemplate',
                 message: '请选择项目模板',
                 choices: this.createTemplateChoice()
-            }
-            ])
+            })
+            const project = await inquirer.prompt(projectPrompt)
             projectInfo = {
+                ...projectInfo,
                 type,
                 ...project
             }
@@ -369,7 +384,7 @@ class InitCommand extends Command {
             projectInfo.name = projectInfo.name
             projectInfo.className = require('kebab-case')(projectInfo.projectName).replace(/^-/, '')
         }
-        if(projectInfo.projectVersion) {
+        if (projectInfo.projectVersion) {
             projectInfo.version = projectInfo.projectVersion
         }
         // return 项目的基本信息 (object)
