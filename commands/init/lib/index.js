@@ -106,6 +106,7 @@ class InitCommand extends Command {
     async ejsRender(options) {
         const dir = process.cwd()
         const projectInfo = this.projectInfo
+
         return new Promise((resolve, reject) => {
             glob('**', {
                 cwd: dir,
@@ -119,7 +120,6 @@ class InitCommand extends Command {
                     const filePath = path.join(dir, file)
                     return new Promise((resolve1, reject1) => {
                         ejs.renderFile(filePath, projectInfo, {}, (err, result) => {
-                            console.log(err, result)
                             if (err) {
                                 reject1(err)
                             } else {
@@ -155,7 +155,8 @@ class InitCommand extends Command {
             spinner.stop(true)
             log.success('模板安装成功')
         }
-        const ignore = ['node_modules/**', 'public/**']
+        const templateInfo = this.templateInfo.ignore || []
+        const ignore = ['node_modules/**', ...templateInfo]
         await this.ejsRender({ignore})
         // 依赖安装
         const {installCommand, startCommand} = this.templateInfo
@@ -269,6 +270,12 @@ class InitCommand extends Command {
     }
 
     async getProjectInfo() {
+        // 1.输入的首字符为英文字符
+        // 2.尾字符必须为英文字符,不能为字符
+        // 3.字符仅允许"_"
+        // 合法: a, a-b, a_b, a-b-c, a_b_c, a-b1-c1, a_b1_c1
+        // 不合法: 1, a_, a-, a_1, a-1
+        // *表示匹配0次到多次
         function isValidName(v) {
             return /^[a-zA-Z]+([-][a-zA-Z][a-zA-Z0-9]*|[_][a-zA-Z][a-zA-Z0-9]*|[a-zA-Z0-9])*$/.test(v)
         }
@@ -279,6 +286,7 @@ class InitCommand extends Command {
             isProjectNameValid = true
             projectInfo.projectName = this.projectName
         }
+
         // 1.选择创建项目或组件
         const {type} = await inquirer.prompt({
             type: 'list',
@@ -294,78 +302,76 @@ class InitCommand extends Command {
             }]
         })
         log.verbose('type', type)
+        // 根据选择过滤模板列表
+        this.template = this.template.filter(t => t.tag.includes(type))
+        const title = type === TYPE_PROJECT ? '项目' : '组件'
+        const projectNamePrompt = {
+            type: 'input',
+            name: 'projectName',
+            message: `请输入${title}名称`,
+            default: '',
+            validate: function (v) {
 
-        if (type === TYPE_PROJECT) {
-            // 2.获取项目的基本信息
-            const projectNamePrompt = {
-                type: 'input',
-                name: 'projectName',
-                message: '请输入项目名称',
-                default: '',
-                validate: function (v) {
+                // Declare function as asynchronous, and save the done callback
+                var done = this.async();
 
-                    // Declare function as asynchronous, and save the done callback
-                    var done = this.async();
+                // Do async stuff
+                setTimeout(function () {
 
-                    // Do async stuff
-                    setTimeout(function () {
-                        // 1.输入的首字符为英文字符
-                        // 2.尾字符必须为英文字符,不能为字符
-                        // 3.字符仅允许"_"
-                        // 合法: a, a-b, a_b, a-b-c, a_b_c, a-b1-c1, a_b1_c1
-                        // 不合法: 1, a_, a-, a_1, a-1
-                        // *表示匹配0次到多次
-                        if (!isValidName(v)) {
-                            // Pass the return value in the done callback
-                            done('请输入合法的项目名称');
-                            return;
-                        }
+                    if (!isValidName(v)) {
                         // Pass the return value in the done callback
-                        done(null, true);
-                    }, 0);
+                        done(`请输入合法的${title}名称`);
+                        return;
+                    }
+                    // Pass the return value in the done callback
+                    done(null, true);
+                }, 0);
 
-                },
-                filter: function (v) {
+            },
+            filter: function (v) {
+                return v
+            }
+        }
+        const projectPrompt = []
+        if (!isProjectNameValid) {
+            projectPrompt.push(projectNamePrompt)
+        }
+        projectPrompt.push({
+            type: 'input',
+            name: "projectVersion",
+            message: `请输入${title}版本号`,
+            default: '1.0.0',
+            validate: function (v) {
+
+                var done = this.async();
+
+                // Do async stuff
+                setTimeout(function () {
+                    if (!(!!semver.valid(v))) {
+                        done('请输入合法的版本号');
+                        return;
+                    }
+                    done(null, true);
+                }, 0);
+            },
+            filter: function (v) {
+
+                if (!!semver.valid(v)) {
+                    return semver.valid(v)
+                } else {
                     return v
                 }
+
             }
-            const projectPrompt = []
-            if (!isProjectNameValid) {
-                projectPrompt.push(projectNamePrompt)
-            }
-            projectPrompt.push({
-                type: 'input',
-                name: "projectVersion",
-                message: '请输入项目版本号',
-                default: '1.0.0',
-                validate: function (v) {
+        }, {
+            type: 'list',
+            name: 'projectTemplate',
+            message: `请选择${title}模板`,
+            choices: this.createTemplateChoice()
+        })
+        if (type === TYPE_PROJECT) {
 
-                    var done = this.async();
-
-                    // Do async stuff
-                    setTimeout(function () {
-                        if (!(!!semver.valid(v))) {
-                            done('请输入合法的版本号');
-                            return;
-                        }
-                        done(null, true);
-                    }, 0);
-                },
-                filter: function (v) {
-
-                    if (!!semver.valid(v)) {
-                        return semver.valid(v)
-                    } else {
-                        return v
-                    }
-
-                }
-            }, {
-                type: 'list',
-                name: 'projectTemplate',
-                message: '请选择项目模板',
-                choices: this.createTemplateChoice()
-            })
+            // 2.获取项目基本信息
             const project = await inquirer.prompt(projectPrompt)
             projectInfo = {
                 ...projectInfo,
@@ -375,20 +381,51 @@ class InitCommand extends Command {
 
 
         } else if (type === TYPE_COMPONENT) {
+            const descriptionPrompt = {
+                type: 'input',
+                name: "componentDescription",
+                message: '请输入组件描述信息',
+                default: '',
+                validate: function (v) {
 
+                    var done = this.async();
+
+                    // Do async stuff
+                    setTimeout(function () {
+                        if (!v) {
+                            done('请输入组件描述信息');
+                            return;
+                        }
+                        done(null, true);
+                    }, 0);
+                }
+            }
+            projectPrompt.push(descriptionPrompt)
+            // 2.获取组件基本信息
+            const component = await inquirer.prompt(projectPrompt)
+            projectInfo = {
+                ...projectInfo,
+                type,
+                ...component
+            }
         }
 
         // AbcEfg => abc-efg
         // 生产className
         if (projectInfo.projectName) {
-            projectInfo.name = projectInfo.name
+            projectInfo.name = projectInfo.projectName;
             projectInfo.className = require('kebab-case')(projectInfo.projectName).replace(/^-/, '')
         }
         if (projectInfo.projectVersion) {
             projectInfo.version = projectInfo.projectVersion
         }
+        if (projectInfo.componentDescription) {
+            projectInfo.description = projectInfo.componentDescription
+        }
+
         // return 项目的基本信息 (object)
         return projectInfo
+
     }
 
 
