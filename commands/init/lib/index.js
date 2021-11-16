@@ -313,8 +313,15 @@ class InitCommand extends Command {
                 ...project
             }
 
+
         } else if (type === TYPE_COMPONENT) {
 
+        }
+
+        // AbcEfg => abc-efg
+        // 生产className
+        if (projectInfo.projectName) {
+            projectInfo.className = require('kebab-case')(projectInfo.projectName).replace(/^-/, '')
         }
         // return 项目的基本信息 (object)
         return projectInfo
